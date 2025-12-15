@@ -1,0 +1,6 @@
+llama-index
+openfga-sdk
+python-dotenv
+openai
+llama-index-llms-openai
+llama-index-embeddings-huggingface

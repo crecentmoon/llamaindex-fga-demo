@@ -1,0 +1,130 @@
+{
+    "schema_version": "1.1",
+    "type_definitions": [
+        {
+            "type": "user",
+            "relations": {}
+        },
+        {
+            "type": "group",
+            "relations": {
+                "member": {
+                    "this": {}
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "member": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "folder",
+            "relations": {
+                "viewer": {
+                    "union": {
+                        "child": [
+                            {
+                                "this": {}
+                            },
+                            {
+                                "tupleToUserset": {
+                                    "tupleset": {
+                                        "object": "",
+                                        "relation": "parent"
+                                    },
+                                    "computedUserset": {
+                                        "object": "",
+                                        "relation": "viewer"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "parent": {
+                    "this": {}
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "viewer": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            },
+                            {
+                                "type": "group",
+                                "relation": "member"
+                            }
+                        ]
+                    },
+                    "parent": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "folder"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "document",
+            "relations": {
+                "parent": {
+                    "this": {}
+                },
+                "viewer": {
+                    "union": {
+                        "child": [
+                            {
+                                "this": {}
+                            },
+                            {
+                                "tupleToUserset": {
+                                    "tupleset": {
+                                        "object": "",
+                                        "relation": "parent"
+                                    },
+                                    "computedUserset": {
+                                        "object": "",
+                                        "relation": "viewer"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "viewer": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            },
+                            {
+                                "type": "group",
+                                "relation": "member"
+                            }
+                        ]
+                    },
+                    "parent": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "folder"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}
