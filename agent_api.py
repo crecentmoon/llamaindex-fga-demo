@@ -9,6 +9,7 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from pydantic import Field
 
 from openfga_sdk import ClientConfiguration, OpenFgaClient
 from openfga_sdk.client.models import ClientCheckRequest
@@ -58,12 +59,10 @@ class FGAPostprocessor(BaseNodePostprocessor):
     """Node postprocessor that filters nodes based on OpenFGA permissions."""
     
     user_id: str
-    permission_results: List[Dict[str, Any]]
+    permission_results: List[Dict[str, Any]] = Field(default_factory=list)
 
-    def __init__(self, user_id: str):
-        super().__init__()
-        self.user_id = user_id
-        self.permission_results = []
+    def __init__(self, user_id: str, **kwargs):
+        super().__init__(user_id=user_id, **kwargs)
 
     async def _postprocess_nodes_async(
         self,
@@ -97,25 +96,33 @@ class FGAPostprocessor(BaseNodePostprocessor):
                     allowed = response.allowed
                     
                     # Store permission result for API response
-                    self.permission_results.append({
+                    # Security: Only include text content for allowed documents
+                    result = {
                         "id": doc_id,
                         "title": title,
                         "category": category,
                         "allowed": allowed,
                         "score": float(node.score) if node.score else 0.0,
-                        "text": node.node.text[:200] + "..." if len(node.node.text) > 200 else node.node.text
-                    })
+                    }
                     
                     if allowed:
+                        # Only include text for authorized documents
+                        result["text"] = node.node.text[:200] + "..." if len(node.node.text) > 200 else node.node.text
                         authorized_nodes.append(node)
+                    else:
+                        # For unauthorized documents, don't expose text content
+                        result["text"] = "[Access Denied]"
+                    
+                    self.permission_results.append(result)
                 except Exception as e:
-                    # On error, deny access
+                    # On error, deny access and don't expose text content
                     self.permission_results.append({
                         "id": doc_id,
                         "title": title,
                         "category": category,
                         "allowed": False,
                         "score": float(node.score) if node.score else 0.0,
+                        "text": "[Access Denied]",
                         "error": str(e)
                     })
         

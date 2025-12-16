@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,130 +11,137 @@
       <header>
         <h1>🔒 Secure AI Agent Demo</h1>
         <p class="subtitle">
-          OpenFGA & LlamaIndex による認証対応AIエージェント
+          Authorization-enabled AI Agent with OpenFGA & LlamaIndex
         </p>
       </header>
 
-      <div class="main-content">
-        <!-- User Selection Section -->
-        <section class="user-selection">
-          <h2>ユーザーを選択</h2>
-          <div class="user-cards" id="userCards">
-            <!-- User cards will be populated by JavaScript -->
-          </div>
-        </section>
+      <div class="main-content-container">
+        <div class="main-content">
+          <!-- User Selection Section -->
+          <section class="user-selection">
+            <h2>Select User</h2>
+            <div class="user-cards" id="userCards">
+              <!-- User cards will be populated by JavaScript -->
+            </div>
+          </section>
 
-        <!-- Query Section -->
-        <section class="query-section">
-          <h2>質問を入力</h2>
-          <div class="demo-scenarios">
-            <h3>デモシナリオ</h3>
-            <div class="scenario-buttons">
-              <button
-                class="scenario-btn"
-                data-question="What is the engineering roadmap?"
-              >
-                Engineeringについて質問
-              </button>
-              <button
-                class="scenario-btn"
-                data-question="What are the sales targets?"
-              >
-                Salesについて質問
-              </button>
-              <button
-                class="scenario-btn"
-                data-question="When is the office closed?"
-              >
-                休暇について質問
-              </button>
-              <button
-                class="scenario-btn"
-                data-question="What is the merger strategy?"
-              >
-                Mergerについて質問
-              </button>
+          <!-- Query Section -->
+          <section class="query-section">
+            <h2>Enter Question</h2>
+            <div class="demo-scenarios">
+              <h3>Demo Scenarios</h3>
+              <div class="scenario-buttons">
+                <button
+                  class="scenario-btn"
+                  data-question="What is the engineering roadmap?"
+                >
+                  Ask about Engineering
+                </button>
+                <button
+                  class="scenario-btn"
+                  data-question="What are the sales targets?"
+                >
+                  Ask about Sales
+                </button>
+                <button
+                  class="scenario-btn"
+                  data-question="When is the office closed?"
+                >
+                  Ask about Holidays
+                </button>
+                <button
+                  class="scenario-btn"
+                  data-question="What is the merger strategy?"
+                >
+                  Ask about Merger
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="query-input">
-            <textarea
-              id="questionInput"
-              placeholder="質問を入力してください..."
-              rows="3"
-            ></textarea>
-            <button id="submitBtn" class="submit-btn" disabled>送信</button>
-          </div>
-        </section>
+            <div class="query-input">
+              <textarea
+                id="questionInput"
+                placeholder="Enter your question..."
+                rows="3"
+              ></textarea>
+              <button id="submitBtn" class="submit-btn" disabled>Submit</button>
+            </div>
+          </section>
 
-        <!-- Results Section -->
-        <section
-          class="results-section"
-          id="resultsSection"
-          style="display: none"
-        >
-          <h2>結果</h2>
+          <!-- Results Section -->
+          <section
+            class="results-section"
+            id="resultsSection"
+            style="display: none"
+          >
+            <h2>Results</h2>
 
-          <!-- Flow Visualization -->
-          <div class="flow-visualization">
-            <div class="flow-step">
-              <div class="flow-icon">📝</div>
-              <div class="flow-label">質問</div>
+            <!-- Flow Visualization -->
+            <div class="flow-visualization">
+              <div class="flow-step">
+                <div class="flow-icon">📝</div>
+                <div class="flow-label">Question</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">🔍</div>
+                <div class="flow-label">Document Search</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">🔐</div>
+                <div class="flow-label">Permission Check</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">✅</div>
+                <div class="flow-label">Use Only Allowed Documents</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">🤖</div>
+                <div class="flow-label">AI Answer</div>
+              </div>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-              <div class="flow-icon">🔍</div>
-              <div class="flow-label">ドキュメント検索</div>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-              <div class="flow-icon">🔐</div>
-              <div class="flow-label">権限チェック</div>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-              <div class="flow-icon">✅</div>
-              <div class="flow-label">許可されたドキュメントのみ使用</div>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-              <div class="flow-icon">🤖</div>
-              <div class="flow-label">AI回答</div>
-            </div>
-          </div>
 
-          <!-- Permission Check Results -->
-          <div class="permission-results">
-            <h3>権限チェック結果</h3>
-            <div class="permission-summary">
-              <span id="permissionSummary"></span>
+            <!-- Permission Check Results -->
+            <div class="permission-results">
+              <h3>Permission Check Results</h3>
+              <div class="permission-summary">
+                <span id="permissionSummary"></span>
+              </div>
+              <div class="documents-list" id="documentsList">
+                <!-- Documents will be populated by JavaScript -->
+              </div>
             </div>
-            <div class="documents-list" id="documentsList">
-              <!-- Documents will be populated by JavaScript -->
-            </div>
-          </div>
 
-          <!-- AI Answer -->
-          <div class="ai-answer">
-            <h3>AI回答</h3>
-            <div class="answer-content" id="answerContent">
-              <!-- Answer will be populated by JavaScript -->
+            <!-- AI Answer -->
+            <div class="ai-answer">
+              <h3>AI Answer</h3>
+              <div class="answer-content" id="answerContent">
+                <!-- Answer will be populated by JavaScript -->
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <!-- Permission Panel (Sidebar) -->
-        <aside class="permission-panel" id="permissionPanel">
-          <h3>アクセス可能なドキュメント</h3>
-          <div id="accessibleDocuments">
-            <p style="color: #6b7280; font-size: 0.9rem;">ユーザーを選択してください</p>
-          </div>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+          <!-- Permission Panel -->
+          <section class="permission-panel" id="permissionPanel">
+            <h3>Accessible Documents</h3>
+            <div id="accessibleDocuments">
+              <p style="color: #6b7280; font-size: 0.9rem">
+                Please select a user
+              </p>
+            </div>
+          </section>
         </aside>
       </div>
 
       <!-- Loading Overlay -->
       <div class="loading-overlay" id="loadingOverlay" style="display: none">
         <div class="loading-spinner"></div>
-        <p>処理中...</p>
+        <p>Processing...</p>
       </div>
     </div>
 
