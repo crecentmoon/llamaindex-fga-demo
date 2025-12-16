@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure AI Agent Demo - OpenFGA & LlamaIndex</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🔒 Secure AI Agent Demo</h1>
+        <p class="subtitle">
+          Authorization-enabled AI Agent with OpenFGA & LlamaIndex
+        </p>
+      </header>
+
+      <div class="main-content-container">
+        <div class="main-content">
+          <!-- User Selection Section -->
+          <section class="user-selection">
+            <h2>Select User</h2>
+            <div class="user-cards" id="userCards">
+              <!-- User cards will be populated by JavaScript -->
+            </div>
+          </section>
+
+          <!-- Query Section -->
+          <section class="query-section">
+            <h2>Enter Question</h2>
+            <div class="demo-scenarios">
+              <h3>Demo Scenarios</h3>
+              <div class="scenario-buttons">
+                <button
+                  class="scenario-btn"
+                  data-question="What is the engineering roadmap?"
+                >
+                  Ask about Engineering
+                </button>
+                <button
+                  class="scenario-btn"
+                  data-question="What are the sales targets?"
+                >
+                  Ask about Sales
+                </button>
+                <button
+                  class="scenario-btn"
+                  data-question="When is the office closed?"
+                >
+                  Ask about Holidays
+                </button>
+                <button
+                  class="scenario-btn"
+                  data-question="What is the merger strategy?"
+                >
+                  Ask about Merger
+                </button>
+              </div>
+            </div>
+            <div class="query-input">
+              <textarea
+                id="questionInput"
+                placeholder="Enter your question..."
+                rows="3"
+              ></textarea>
+              <button id="submitBtn" class="submit-btn" disabled>Submit</button>
+            </div>
+          </section>
+
+          <!-- Results Section -->
+          <section
+            class="results-section"
+            id="resultsSection"
+            style="display: none"
+          >
+            <h2>Results</h2>
+
+            <!-- Flow Visualization -->
+            <div class="flow-visualization">
+              <div class="flow-step">
+                <div class="flow-icon">📝</div>
+                <div class="flow-label">Question</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">🔍</div>
+                <div class="flow-label">Document Search</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">🔐</div>
+                <div class="flow-label">Permission Check</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">✅</div>
+                <div class="flow-label">Use Only Allowed Documents</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="flow-icon">🤖</div>
+                <div class="flow-label">AI Answer</div>
+              </div>
+            </div>
+
+            <!-- Permission Check Results -->
+            <div class="permission-results">
+              <h3>Permission Check Results</h3>
+              <div class="permission-summary">
+                <span id="permissionSummary"></span>
+              </div>
+              <div class="documents-list" id="documentsList">
+                <!-- Documents will be populated by JavaScript -->
+              </div>
+            </div>
+
+            <!-- AI Answer -->
+            <div class="ai-answer">
+              <h3>AI Answer</h3>
+              <div class="answer-content" id="answerContent">
+                <!-- Answer will be populated by JavaScript -->
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+          <!-- Permission Panel -->
+          <section class="permission-panel" id="permissionPanel">
+            <h3>Accessible Documents</h3>
+            <div id="accessibleDocuments">
+              <p style="color: #6b7280; font-size: 0.9rem">
+                Please select a user
+              </p>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" id="loadingOverlay" style="display: none">
+        <div class="loading-spinner"></div>
+        <p>Processing...</p>
+      </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
