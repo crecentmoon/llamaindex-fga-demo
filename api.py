@@ -4,9 +4,15 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any
 import asyncio
+import os
+from dotenv import load_dotenv
 
-from agent_api import process_query
-from data import docs_data
+from agent_api import process_query, fga_config
+from data import docs_data, USERS, DOC_TO_FOLDER, get_user_by_id, get_profile_image_path
+from openfga_sdk import OpenFgaClient
+from openfga_sdk.client.models import ClientCheckRequest
+
+load_dotenv()
 
 app = FastAPI(title="Secure AI Agent API")
 
@@ -29,44 +35,21 @@ class UserInfo(BaseModel):
     name: str
     role: str
     groups: List[str]
+    profile_image: str
 
 class DocumentInfo(BaseModel):
     id: str
     title: str
     category: str
     lang: str
+    folder: str
 
 class PermissionInfo(BaseModel):
     user_id: str
     accessible_documents: List[Dict[str, str]]
     groups: List[str]
 
-# User data
-USERS = [
-    {"id": "user:seigen", "name": "Seigen", "role": "CEO", "groups": ["engineering", "sales"]},
-    {"id": "user:alan", "name": "Alan", "role": "EM", "groups": ["engineering"]},
-    {"id": "user:tsukada", "name": "Tsukada", "role": "CRO", "groups": ["sales"]},
-    {"id": "user:tsuki", "name": "Tsuki", "role": "Backend", "groups": ["engineering"]},
-]
-
-# Document to folder mapping (from fga_setup.py)
-DOC_TO_FOLDER = {
-    "1": "engineering",
-    "2": "sales",
-    "3": "general",
-    "4": "engineering",
-    "5": "sales",
-    "6": "general",
-    "7": "executive",
-}
-
-# User to accessible folders mapping
-USER_ACCESSIBLE_FOLDERS = {
-    "user:seigen": ["engineering", "sales", "general", "executive"],
-    "user:alan": ["engineering", "general"],
-    "user:tsukada": ["sales", "general"],
-    "user:tsuki": ["engineering", "general"],
-}
+# All data is now imported from data.py (Single Source of Truth)
 
 @app.get("/")
 async def read_root():
@@ -89,7 +72,12 @@ async def get_users():
     """
     Get list of all users.
     """
-    return [UserInfo(**user) for user in USERS]
+    users_with_images = []
+    for user in USERS:
+        user_dict = user.copy()
+        user_dict["profile_image"] = get_profile_image_path(user["id"])
+        users_with_images.append(UserInfo(**user_dict))
+    return users_with_images
 
 @app.get("/api/documents", response_model=List[DocumentInfo])
 async def get_documents():
@@ -98,38 +86,55 @@ async def get_documents():
     """
     documents = []
     for doc in docs_data:
+        doc_id = doc["id"]
+        folder = DOC_TO_FOLDER.get(doc_id, "unknown")
         documents.append(DocumentInfo(
-            id=doc["id"],
+            id=doc_id,
             title=doc["metadata"]["title"],
             category=doc["metadata"]["category"],
-            lang=doc["metadata"]["lang"]
+            lang=doc["metadata"]["lang"],
+            folder=folder
         ))
     return documents
 
 @app.get("/api/permissions/{user_id}", response_model=PermissionInfo)
 async def get_permissions(user_id: str):
     """
-    Get permission information for a specific user.
+    Get permission information for a specific user from OpenFGA.
     """
     # Find user
-    user = next((u for u in USERS if u["id"] == user_id), None)
+    user = get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get accessible folders
-    accessible_folders = USER_ACCESSIBLE_FOLDERS.get(user_id, [])
-    
-    # Get accessible documents
+    # Check permissions for each document using OpenFGA
     accessible_documents = []
-    for doc in docs_data:
-        doc_id = doc["id"]
-        folder = DOC_TO_FOLDER.get(doc_id)
-        if folder in accessible_folders:
-            accessible_documents.append({
-                "id": doc_id,
-                "title": doc["metadata"]["title"],
-                "folder": folder
-            })
+    
+    async with OpenFgaClient(fga_config) as client:
+        for doc in docs_data:
+            doc_id = doc["id"]
+            object_str = f"document:{doc_id}"
+            
+            try:
+                response = await client.check(
+                    body=ClientCheckRequest(
+                        user=user_id,
+                        relation="viewer",
+                        object=object_str
+                    )
+                )
+                
+                if response.allowed:
+                    folder = DOC_TO_FOLDER.get(doc_id, "unknown")
+                    accessible_documents.append({
+                        "id": doc_id,
+                        "title": doc["metadata"]["title"],
+                        "folder": folder
+                    })
+            except Exception as e:
+                # Log error but continue processing other documents
+                print(f"Error checking permission for {object_str}: {e}")
+                continue
     
     return PermissionInfo(
         user_id=user_id,

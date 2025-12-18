@@ -1,6 +1,7 @@
 // State
 let selectedUserId = null;
 let users = [];
+let documents = [];
 let permissions = {};
 let flowAnimationTimer = null;
 
@@ -35,19 +36,10 @@ async function loadUsers() {
   }
 }
 
-// Get profile image path from user ID
-function getProfileImagePath(userId) {
-  // Extract name from user ID (e.g., "user:seigen" -> "seigen")
-  const name = userId.replace("user:", "").toLowerCase();
-  // Map user IDs to image filenames
-  const imageMap = {
-    seigen: "seigen.png",
-    alan: "alan.png",
-    tsukada: "tsukada.png",
-    tsuki: "tsukioka.png", // tsuki uses tsukioka.png
-  };
-  const imageName = imageMap[name] || `${name}.png`;
-  return `/static/img/${imageName}`;
+// Get profile image path from user object
+// Image mapping is now managed server-side via API
+function getProfileImagePath(user) {
+  return user.profile_image || `/static/img/${user.id.replace("user:", "").toLowerCase()}.png`;
 }
 
 // Render user cards
@@ -62,7 +54,7 @@ function renderUserCards() {
       .map((g) => `<span class="group-badge">${g}</span>`)
       .join("");
 
-    const profileImagePath = getProfileImagePath(user.id);
+    const profileImagePath = getProfileImagePath(user);
 
     card.innerHTML = `
             <div class="user-avatar">
@@ -112,12 +104,12 @@ async function loadPermissions(userId) {
 
 // Update permission panel
 function updatePermissionPanel(userId) {
-  if (!permissions[userId]) return;
+  if (!permissions[userId] || !documents.length) return;
 
   const perm = permissions[userId];
   const folders = {};
 
-  // Group documents by folder
+  // Group accessible documents by folder
   perm.accessible_documents.forEach((doc) => {
     if (!folders[doc.folder]) {
       folders[doc.folder] = [];
@@ -125,20 +117,23 @@ function updatePermissionPanel(userId) {
     folders[doc.folder].push(doc);
   });
 
-  // Get all documents
-  const allDocs = [
-    { id: "1", title: "Engineering Roadmap 2025", folder: "engineering" },
-    { id: "2", title: "Sales Targets 2025", folder: "sales" },
-    { id: "3", title: "Holiday Notice", folder: "general" },
-    { id: "4", title: "Project Alpha Specs", folder: "engineering" },
-    { id: "5", title: "Q4 Sales Report JP", folder: "sales" },
-    { id: "6", title: "Remote Work Policy", folder: "general" },
-    { id: "7", title: "Merger Strategy", folder: "executive" },
-  ];
+  // Group all documents by folder (from API)
+  const allDocsByFolder = {};
+  documents.forEach((doc) => {
+    const folder = doc.folder || "general";
+    if (!allDocsByFolder[folder]) {
+      allDocsByFolder[folder] = [];
+    }
+    allDocsByFolder[folder].push(doc);
+  });
 
   const folderNames = {
     engineering: "Engineering",
+    se: "SE",
     sales: "Sales",
+    product: "Product",
+    corporate: "Corporate",
+    scpm: "SC/PM",
     general: "General",
     executive: "Executive",
   };
@@ -149,20 +144,19 @@ function updatePermissionPanel(userId) {
     const accessibleDocIds = new Set(
       (folders[folderKey] || []).map((d) => d.id)
     );
+    const folderDocs = allDocsByFolder[folderKey] || [];
 
     html += `<div class="folder-group">`;
     html += `<div class="folder-title">${folderName}</div>`;
 
-    allDocs
-      .filter((d) => d.folder === folderKey)
-      .forEach((doc) => {
-        const isAccessible = accessibleDocIds.has(doc.id);
-        html += `<div class="accessible-doc-item ${
-          isAccessible ? "" : "disabled"
-        }">`;
-        html += doc.title;
-        html += `</div>`;
-      });
+    folderDocs.forEach((doc) => {
+      const isAccessible = accessibleDocIds.has(doc.id);
+      html += `<div class="accessible-doc-item ${
+        isAccessible ? "" : "disabled"
+      }">`;
+      html += doc.title;
+      html += `</div>`;
+    });
 
     html += `</div>`;
   });
@@ -377,13 +371,12 @@ function displayResults(data) {
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// Load documents (for reference)
+// Load documents from API
 async function loadDocuments() {
   try {
     const response = await fetch("/api/documents");
-    const docs = await response.json();
-    // Store for future use if needed
-    console.log("Loaded documents:", docs);
+    documents = await response.json();
+    console.log("Loaded documents:", documents);
   } catch (error) {
     console.error("Failed to load documents:", error);
   }
